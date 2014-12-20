@@ -169,6 +169,19 @@ int um_instruction_decode(um *u, platter p, int debug) {
     }
     u->finger++;
     break;
+  case 11:
+    if(debug) fprintf(stderr, "in %d %d %d\n", a, b, c);
+    { int ch;
+      ch = getchar();
+      if(ch == EOF) {
+        return 1;
+      }
+      else {
+        u->r[c] = ch;
+        u->finger++;
+      }
+    }
+    break;
   case 12:
     if(debug) fprintf(stderr, "prg %d %d %d\n", a, b, c);
     if(debug) fprintf(stderr, "(%d) (%d) (%d)\n", u->r[a], u->r[b], u->r[c]);
