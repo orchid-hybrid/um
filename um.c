@@ -18,13 +18,13 @@ typedef struct {
   array *a;
 } um;
 
-platter reverse_endian(platter p) {
-  // http://stackoverflow.com/questions/2182002/convert-big-endian-to-little-endian-in-c-without-using-provided-func
-  p = ((p << 8) & 0xFF00FF00 ) | ((p >> 8) & 0xFF00FF ); 
-  return (p << 16) | (p >> 16);
-}
+// platter reverse_endian(platter p) {
+//   // http://stackoverflow.com/questions/2182002/convert-big-endian-to-little-endian-in-c-without-using-provided-func
+//   p = ((p << 8) & 0xFF00FF00 ) | ((p >> 8) & 0xFF00FF ); 
+//   return (p << 16) | (p >> 16);
+// }
 
-void um_init(um *u, long length, void *buffer) {
+void um_init(um *u, long length, unsigned char *buffer) {
   int i;
   
   u->r[0] = 0;
@@ -43,10 +43,14 @@ void um_init(um *u, long length, void *buffer) {
   u->a = malloc(sizeof(array)*u->arrays);
   u->a[0].id = 0;
   u->a[0].length = length;
-  u->a[0].elt = buffer;
+  u->a[0].elt = malloc(length*sizeof(platter));//buffer;
 
+  // portable endian handling thanks to http://commandcenter.blogspot.co.uk/2012/04/byte-order-fallacy.html
+#define LITTLE(a,b,c,d) (a<<0)|(b<<8)|(c<<16)|(d<<24)
+#define BIG(a,b,c,d) (a<<24)|(b<<16)|(c<<8)|(d<<0)
+  
   for(i = 0; i < length; i++) {
-    u->a[0].elt[i] = reverse_endian(u->a[0].elt[i]);
+    u->a[0].elt[i] = BIG(buffer[4*i+0],buffer[4*i+1],buffer[4*i+2],buffer[4*i+3]);
   }
 }
 
@@ -218,7 +222,7 @@ int um_instruction_decode(um *u, platter p, int debug) {
 int main(int argc, char **argv) {
   FILE *fptr;
   long file_size;
-  void *buffer;
+  unsigned char *buffer;
 
   um u;
   
@@ -237,15 +241,16 @@ int main(int argc, char **argv) {
   file_size = ftell(fptr);
   fseek(fptr, 0, SEEK_SET);
 
-  if(file_size%4 != 0) {
-    puts("File size is not a mutliple of 4");
-    return EXIT_FAILURE;
-  }
+  //if(file_size%4 != 0) {
+  //  puts("File size is not a mutliple of 4");
+  //  return EXIT_FAILURE;
+  //}
 
   buffer = malloc(file_size);
   fread(buffer, file_size, 1, fptr);
-
   um_init(&u, file_size/4, buffer);
+  free(buffer);
+  
   while(u.finger <= u.a[0].length
         && !um_instruction_decode(&u, u.a[0].elt[u.finger], 0)) {}
   
