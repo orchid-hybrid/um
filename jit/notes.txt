@@ -1,0 +1,2 @@
+export PYTHONPATH=/home/youmu/Code/Python/pypy-2.4.0-src/
+python2 "$PYTHONPATH/rpython/bin/rpython" main.py
